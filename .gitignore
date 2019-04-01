@@ -1,0 +1,6 @@
+.idea
+node_modules
+
+# testing purpose only! remove for development environment
+public/js/*
+public/css/*
