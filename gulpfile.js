@@ -102,7 +102,7 @@ function webpackTask(is_dev) {
 }
 
 exports.default = function () {
-    webpackTask()
+    webpackTask();
     return prod_styles();
 };
 exports.dev = function () {
