@@ -1,3 +1,8 @@
+/**
+ * Example of gulp configuration
+ * @link https://github.com/13DaGGeR/gulpfile-example
+ * @version 0.1.1
+ */
 const css_syntax = 'scss', // sass|scss
     source_dir = 'src/', // must contain js and (sass or scss) directories
     destination_dir = 'public/'; // will receive result files in js and css subdirectories respectively
@@ -17,7 +22,18 @@ const gulp = require('gulp'),
 ;
 const {VueLoaderPlugin} = require('vue-loader');
 
-function styles() {
+function dev_styles() {
+    let processors = [
+        atImport,
+        autoprefixer({browsers: ['last 15 version']}),
+    ];
+    return gulp.src(source_dir + css_syntax + '/*.' + css_syntax)
+        .pipe(sass({outputStyle: 'expand'}))
+        .pipe(postcss(processors))
+        .pipe(gulp.dest(destination_dir + 'css'))
+}
+
+function prod_styles() {
     let processors = [
         atImport,
         autoprefixer({browsers: ['last 15 version']}),
@@ -31,11 +47,11 @@ function styles() {
         .pipe(gulp.dest(destination_dir + 'css'))
 }
 
-function webpackTask() {
+function webpackTask(is_dev) {
     log('webpack started');
-    return webpack({
-        watch: true,
-        mode: 'development',
+    let config = {
+        watch: !!is_dev,
+        mode: is_dev ? 'development' : 'production',
         entry: glob.sync(source_dir + '/js/*.js').reduce((acc, cur) => {
             acc[path.basename(cur, '.js')] = path.resolve(cur);
             return acc
@@ -45,7 +61,6 @@ function webpackTask() {
             publicPath: '/js/',
             filename: '[name].js'
         },
-        devtool: 'source-map',
         module: {
             rules: [
                 {test: /\.css$/, use: ['vue-style-loader', 'css-loader'],},
@@ -64,15 +79,15 @@ function webpackTask() {
                 {test: /\.js$/, loader: 'babel-loader', exclude: /node_modules/}
             ]
         },
-        optimization: {
-            minimizer: [new uglifyJsPlugin()],
-        },
-        resolve: {alias: {vue$: 'vue/dist/vue.esm.js'}, extensions: ['*', '.js', '.vue', '.json']},
+        resolve: {alias: {vue$: 'vue/dist/vue.min.js'}, extensions: ['*', '.js', '.vue', '.json']},
         plugins: [
-            new VueLoaderPlugin(),
-            new webpack.ProvidePlugin({$: 'jquery', jquery: 'jquery', 'window.jQuery': 'jquery', jQuery: 'jquery'})
+            new VueLoaderPlugin()
         ]
-    }, (err, stats) => {
+    };
+    if (!is_dev) {
+        config.devtool = 'source-map';
+    }
+    return webpack(config, (err, stats) => {
         let hasError = !!err;
         if (!err && stats.compilation.errors.length) {
             err = stats.compilation.errors;
@@ -87,7 +102,11 @@ function webpackTask() {
 }
 
 exports.default = function () {
-    styles();
-    gulp.watch(source_dir + css_syntax + '/**/*.' + css_syntax, styles);
-    webpackTask();
+    webpackTask()
+    return prod_styles();
+};
+exports.dev = function () {
+    dev_styles();
+    gulp.watch(source_dir + css_syntax + '/**/*.' + css_syntax, dev_styles);
+    webpackTask(1);
 };
