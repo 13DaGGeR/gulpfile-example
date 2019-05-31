@@ -1,7 +1,7 @@
 /**
  * Example of gulp configuration
  * @link https://github.com/13DaGGeR/gulpfile-example
- * @version 0.1.1
+ * @version 0.1.2
  */
 const css_syntax = 'scss', // sass|scss
     source_dir = 'src/', // must contain js and (sass or scss) directories
@@ -49,6 +49,20 @@ function prod_styles() {
 
 function webpackTask(is_dev) {
     log('webpack started');
+    let postCssLoader = {
+        loader: 'postcss-loader',
+        options: {
+            plugins: function () {
+                let modules = [
+                    autoprefixer({browsers: ['last 15 version']})
+                ];
+                if (!is_dev) {
+                    modules.push(cssnano);
+                }
+                return modules;
+            }
+        }
+    };
     let config = {
         watch: !!is_dev,
         mode: is_dev ? 'development' : 'production',
@@ -63,16 +77,16 @@ function webpackTask(is_dev) {
         },
         module: {
             rules: [
-                {test: /\.css$/, use: ['vue-style-loader', 'css-loader'],},
-                {test: /\.scss$/, use: ['vue-style-loader', 'css-loader', 'sass-loader'],},
-                {test: /\.sass$/, use: ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax'],},
+                {test: /\.css$/, use: ['vue-style-loader', 'css-loader', postCssLoader],},
+                {test: /\.scss$/, use: ['vue-style-loader', 'css-loader', 'sass-loader', postCssLoader],},
+                {test: /\.sass$/, use: ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax', postCssLoader],},
                 {
                     test: /\.vue$/,
                     loader: 'vue-loader',
                     options: {
                         loaders: {
-                            'scss': ['vue-style-loader', 'css-loader', 'sass-loader'],
-                            'sass': ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax']
+                            'scss': ['vue-style-loader', 'css-loader', 'sass-loader', postCssLoader],
+                            'sass': ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax', postCssLoader]
                         }
                     }
                 },
@@ -110,3 +124,4 @@ exports.dev = function () {
     gulp.watch(source_dir + css_syntax + '/**/*.' + css_syntax, dev_styles);
     webpackTask(1);
 };
+
