@@ -18,6 +18,7 @@
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
+    "chokidar": "3.4",
     "jquery": "^3.3.1",
     "postcss-loader": "^3.0.0",
     "vue": "^2.6.10"
